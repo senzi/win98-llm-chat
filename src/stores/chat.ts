@@ -67,10 +67,10 @@ export const useChatStore = defineStore('chat', {
       try {
         const openai = new OpenAI({
           baseURL: settingsStore.effectiveApiEndpoint === '/api/openai'
-            ? 'https://api.openai.com'
+            ? 'https://api.openai.com/v1'
             : settingsStore.effectiveApiEndpoint === '/api/deepseek'
-            ? 'https://api.deepseek.com'
-            : 'https://api.moonshot.cn',
+            ? 'https://api.deepseek.com/v1'
+            : 'https://api.moonshot.cn/v1',
           apiKey: settingsStore.apiKey,
           dangerouslyAllowBrowser: true
         })
