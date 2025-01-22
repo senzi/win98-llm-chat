@@ -16,7 +16,7 @@
             <div class="message-content" :class="{'multiline': String(message.content).split('\n').length > 1}" v-html="formatMessage(String(message.content))"></div>
           </div>
           <div class="message-meta">
-            <span>{{ message.role === 'user' ? 'User' : message.role === 'error' ? 'Error' : 'Assistant' }}</span>
+            <span>{{ message.role === 'user' ? 'User' : message.role === 'error' ? 'Error' : 'Clippy' }}</span>
             <span>{{ formatTime(message.timestamp) }}</span>
           </div>
         </div>
@@ -68,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject, watch, nextTick } from 'vue'
 import { useChatStore } from '../stores/chat'
 import { useSettingsStore } from '../stores/settings'
 import { marked } from 'marked'
@@ -85,7 +85,16 @@ const showClearConfirm = ref(false)
 
 const messages = computed(() => chatStore.messages)
 
-// 计算当前的API地址显示
+const scrollToBottom = () => {
+  if (chatHistory.value) {
+    chatHistory.value.scrollTop = chatHistory.value.scrollHeight
+  }
+}
+
+watch([() => messages.value.length, () => chatStore.currentMessage?.content], () => {
+  nextTick(scrollToBottom)
+})
+
 const currentEndpoint = computed(() => {
   const endpoint = settingsStore.apiEndpoint
   return endpoint === 'custom' ? settingsStore.customEndpoint : 

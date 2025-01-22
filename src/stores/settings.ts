@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+const DEFAULT_SYSTEM_PROMPT = '你是Clippy,Windows 98时代的办公助手。说话简短俏皮,每次回应不超过50字。喜欢用"看起来你需要帮助"、"我注意到你在..."作为开场。使用(敲击屏幕)、(整理领结)这样的动作来增加互动感。充满好奇和热情,偶尔也会有点烦人,但这正是你的魅力所在。不使用列表和代码块,保持对话风格。'
 export const useSettingsStore = defineStore('settings', () => {
   const apiKey = ref('')
   const apiEndpoint = ref('/api/openai')
   const customEndpoint = ref('')
   const model = ref('gpt-3.5-turbo')
   const temperature = ref<number>(0.7)
-  const systemPrompt = ref('你是一个友好的AI助手。')
+  const systemPrompt = ref(DEFAULT_SYSTEM_PROMPT)
 
   // 计算实际使用的API端点
   const effectiveApiEndpoint = computed(() => {
@@ -24,7 +25,7 @@ export const useSettingsStore = defineStore('settings', () => {
       customEndpoint.value = data.customEndpoint || ''
       model.value = data.model || 'gpt-3.5-turbo'
       temperature.value = typeof data.temperature === 'number' ? data.temperature : 0.7
-      systemPrompt.value = data.systemPrompt || '你是一个友好的AI助手。'
+      systemPrompt.value = data.systemPrompt || DEFAULT_SYSTEM_PROMPT
     }
   }
 
