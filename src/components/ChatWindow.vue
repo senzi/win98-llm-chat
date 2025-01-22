@@ -380,6 +380,10 @@ onMounted(() => {
   margin-top: 12px;
 }
 
+.message-meta span:last-child {
+  margin-left: 12px;
+}
+
 .user-message .message-meta {
   justify-content: flex-end;
 }
