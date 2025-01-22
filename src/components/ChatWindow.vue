@@ -185,12 +185,14 @@ onMounted(() => {
   align-items: center;
 }
 
+
 .message-content {
   padding: 6px 8px;
   word-wrap: break-word;
   white-space: pre-wrap;
-  border: 1px solid #969696;
-  box-shadow: inset 1px 1px #ffffff, inset -1px -1px #7f7f7f;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  background: #FFFFCC;
   max-width: 80%;
   font-size: 12px;
   line-height: 1.4;
@@ -204,28 +206,39 @@ onMounted(() => {
 }
 
 .message-content pre {
-  margin: 0;
-  background: #f0f0f0;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  margin: 8px 0;
   padding: 8px;
-  border-radius: 2px;
+  background: #FFFFFF;
+  border: 1px solid #000000;
+  border-radius: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .message-content pre code {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
   white-space: pre-wrap;
   word-wrap: break-word;
-  margin: 0;
-  display: block;
-  min-height: 1.4em;
-  line-height: 1.4em;
+  vertical-align: middle;
+  background: transparent;
 }
 
 .message-content code {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
   font-family: monospace;
   background: #f0f0f0;
 }
 
 .message-content.multiline pre code {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
   display: block;
   padding: 4px 0;
 }
@@ -243,32 +256,6 @@ onMounted(() => {
 
 .message-content > :last-child {
   margin-bottom: 0;
-}
-
-.message-content pre {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-x: auto;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 8px 0;
-  padding: 8px;
-  background: #f0f0f0;
-  border-radius: 2px;
-}
-
-.message-content pre code {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  vertical-align: middle;
-}
-
-.message-content code {
-  font-family: monospace;
-  background: #f0f0f0;
-  padding: 1px 4px;
-  border-radius: 2px;
-  word-wrap: break-word;
 }
 
 .message-content p {
@@ -320,7 +307,7 @@ onMounted(() => {
 }
 
 .user-message .message-content {
-  background: #dcedff;  /* 浅蓝色背景 */
+  background: #FFFFCC;
 }
 
 /* AI消息样式 */
@@ -329,7 +316,7 @@ onMounted(() => {
 }
 
 .bot-message .message-content {
-  background: #e6e6e6;  /* 经典Windows灰色 */
+  background: #FFFFCC;
 }
 
 .message-meta {
@@ -528,4 +515,5 @@ textarea {
   outline: 1px dotted #000;
   outline-offset: -4px;
 }
+
 </style>
