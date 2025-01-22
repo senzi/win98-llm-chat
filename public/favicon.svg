@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="32" height="32" fill="#C0C0C0"/>
+  
+  <!-- 外边框 -->
+  <path d="M0 0H31H32V1V31V32H31H1H0V31V1V0Z" fill="#C0C0C0"/>
+  <path d="M1 1H30V30H1V1Z" fill="#C0C0C0"/>
+  
+  <!-- 外边框阴影 -->
+  <path d="M0 0H31V1H1V31H0V0Z" fill="white"/>
+  <path d="M31 0H32V31H31V1H1V0H31Z" fill="#808080"/>
+  <path d="M1 31H31V32H1V31Z" fill="#000000"/>
+  <path d="M31 1H32V32H31V1Z" fill="#000000"/>
+  
+  <!-- 聊天气泡 -->
+  <g transform="translate(6,6)">
+    <!-- 用户气泡 -->
+    <rect x="0" y="2" width="8" height="6" fill="#DCEDFF"/>
+    <path d="M0 2H8V8H0V2Z" stroke="#808080"/>
+    
+    <!-- AI气泡 -->
+    <rect x="10" y="12" width="10" height="8" fill="#E6E6E6"/>
+    <path d="M10 12H20V20H10V12Z" stroke="#808080"/>
+  </g>
+</svg>

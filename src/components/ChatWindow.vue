@@ -38,7 +38,7 @@
     </div>
 
     <div class="status-bar">
-      <p class="status-bar-field button" @click="$parent.openSettings" style="cursor: pointer">
+      <p class="status-bar-field button" @click="openSettings" style="cursor: pointer">
         <u>S</u>ettings
       </p>
       <p class="status-bar-field status">API: {{ currentEndpoint }}</p>
@@ -68,11 +68,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useChatStore } from '../stores/chat'
 import { useSettingsStore } from '../stores/settings'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
+
+const openSettings = inject('openSettings') as () => void
 
 const chatStore = useChatStore()
 const settingsStore = useSettingsStore()
@@ -98,22 +100,26 @@ const formatTime = (timestamp: number) => {
   })
 }
 
-const formatMessage = (content: string | null | undefined) => {
-  // 使用 marked 解析 markdown，并用 DOMPurify 清理 HTML
-  return DOMPurify.sanitize(marked(String(content || '')))
+const formatMessage = (content: string) => {
+  const parsed = marked.parse(content || '')
+  return DOMPurify.sanitize(typeof parsed === 'string' ? parsed : '')
 }
 
 const sendMessage = async () => {
   if (!userInput.value.trim() || isLoading.value) return
-  
-  const message = {
-    role: 'user',
-    content: userInput.value,
-    timestamp: Date.now()
-  }
+
+  const message = userInput.value
   userInput.value = ''
-  
-  await chatStore.sendMessage(message)
+  isLoading.value = true
+
+  try {
+    await chatStore.sendMessage(message)
+  } finally {
+    isLoading.value = false
+    if (chatHistory.value) {
+      chatHistory.value.scrollTop = chatHistory.value.scrollHeight
+    }
+  }
 }
 
 const confirmClear = () => {
@@ -188,6 +194,55 @@ onMounted(() => {
   max-width: 80%;
   font-size: 12px;
   line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.message-content > * {
+  margin: 0;
+}
+
+.message-content pre {
+  margin: 0;
+  background: #f0f0f0;
+  padding: 8px;
+  border-radius: 2px;
+  width: 100%;
+}
+
+.message-content pre code {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+  display: block;
+  min-height: 1.4em;
+  line-height: 1.4em;
+}
+
+.message-content code {
+  font-family: monospace;
+  background: #f0f0f0;
+}
+
+.message-content.multiline pre code {
+  display: block;
+  padding: 4px 0;
+}
+
+.message-content > p {
+  margin: 0;
+  min-height: 1.4em;
+  display: flex;
+  align-items: center;
+}
+
+.message-content > :first-child {
+  margin-top: 0;
+}
+
+.message-content > :last-child {
+  margin-bottom: 0;
 }
 
 .message-content pre {
@@ -200,6 +255,12 @@ onMounted(() => {
   padding: 8px;
   background: #f0f0f0;
   border-radius: 2px;
+}
+
+.message-content pre code {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  vertical-align: middle;
 }
 
 .message-content code {

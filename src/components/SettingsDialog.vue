@@ -30,17 +30,10 @@
 
         <div class="field-row">
           <label for="model">模型:</label>
-          <select id="model" v-model="settings.model" :disabled="!settings.apiKey">
-            <template v-if="settings.apiEndpoint === '/api/openai'">
-              <option value="gpt-4">gpt-4</option>
-              <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-            </template>
-            <template v-else-if="settings.apiEndpoint === '/api/deepseek'">
-              <option value="deepseek-chat">deepseek-chat</option>
-            </template>
-            <template v-else-if="settings.apiEndpoint === '/api/moonshot'">
-              <option value="moonshot-v1-auto">moonshot-v1-auto</option>
-            </template>
+          <select id="model" v-model="settings.model">
+            <option v-for="model in availableModels" :key="model.value" :value="model.value">
+              {{ model.label }}
+            </option>
           </select>
         </div>
 
@@ -57,37 +50,33 @@
         </fieldset>
 
         <div class="field-row" style="justify-content: flex-end">
-          <button @click="testConnection" :disabled="testing">连接测试</button>
-          <button @click="save" :disabled="testing">保存</button>
+          <button @click="testConnection" :disabled="isTestingConnection">连接测试</button>
+          <button @click="save" :disabled="isTestingConnection">保存</button>
           <button @click="close">取消</button>
         </div>
       </div>
       <!-- 测试结果弹窗 -->
-      <div v-if="showTestResult" class="modal-overlay" @click.self="showTestResult = false">
+      <div v-if="testResult" class="modal-overlay" @click.self="testResult = null">
         <div class="modal-window test-result-window">
           <div class="title-bar">
             <div class="title-bar-text">测试结果</div>
             <div class="title-bar-controls">
-              <button aria-label="Close" @click="showTestResult = false"></button>
+              <button aria-label="Close" @click="testResult = null"></button>
             </div>
           </div>
           <div class="window-body">
             <div class="modal-content">
-              <div class="warning-icon" :class="{ 'success': testSuccess }">
-                {{ testSuccess ? '✓' : '!' }}
+              <div class="warning-icon" :class="{ 'success': testResult.status === 'success' }">
+                {{ testResult.status === 'success' ? '✓' : '!' }}
               </div>
               <div class="modal-message">
-                <div v-if="testSuccess">连接成功！</div>
-                <div v-if="testResponse">
-                  {{ testResponse }}
-                </div>
-                <div v-if="testError" class="error-message">
-                  错误：{{ testError }}
-                </div>
+                <div v-if="testResult.status === 'success'">连接成功！</div>
+                <div v-if="testResult.status === 'error'">连接失败！</div>
+                <pre>{{ testResult.message }}</pre>
               </div>
             </div>
             <div class="modal-buttons">
-              <button @click="showTestResult = false">确定</button>
+              <button @click="testResult = null">确定</button>
             </div>
           </div>
         </div>
@@ -97,61 +86,80 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, computed, watch, reactive } from 'vue'
 import { useSettingsStore } from '../stores/settings'
-import { useChatStore } from '../stores/chat'
 import { testLLMConnection } from '../utils/llmTest'
 
-const props = defineProps<{
+defineProps<{
   isOpen: boolean
 }>()
 
 const emit = defineEmits(['close'])
-
 const settingsStore = useSettingsStore()
-const chatStore = useChatStore()
-const showDialog = ref(false)
-const testing = ref(false)
-const showTestResult = ref(false)
-const testSuccess = ref(false)
-const testResponse = ref('')
-const testError = ref('')
+
+const isTestingConnection = ref(false)
+const testResult = ref<{
+  status: 'success' | 'error',
+  message: string
+} | null>(null)
+
+type ApiEndpoint = '/api/openai' | '/api/deepseek' | '/api/moonshot' | 'custom'
+
+interface ModelOption {
+  value: string
+  label: string
+}
+
+type ModelOptions = Record<ApiEndpoint, ModelOption[]>
+
+const modelOptions = {
+  '/api/openai': [
+    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+    { value: 'gpt-4', label: 'GPT-4' }
+  ],
+  '/api/deepseek': [
+    { value: 'deepseek-chat', label: 'Deepseek Chat' },
+    { value: 'deepseek-coder', label: 'Deepseek Coder' }
+  ],
+  '/api/moonshot': [
+    { value: 'moonshot-v1-8k', label: 'Moonshot V1 8K' },
+    { value: 'moonshot-v1-32k', label: 'Moonshot V1 32K' },
+    { value: 'moonshot-v1-128k', label: 'Moonshot V1 128K' }
+  ],
+  'custom': [] as ModelOption[]
+} as const satisfies ModelOptions
 
 const settings = reactive({
   apiKey: settingsStore.apiKey,
-  apiEndpoint: settingsStore.apiEndpoint,
+  apiEndpoint: settingsStore.apiEndpoint as ApiEndpoint,
   customEndpoint: settingsStore.customEndpoint,
   model: settingsStore.model,
   temperature: settingsStore.temperature,
   systemPrompt: settingsStore.systemPrompt
 })
 
+// 计算当前可用的模型列表
+const availableModels = computed(() => {
+  const endpoint = settings.apiEndpoint
+  return modelOptions[endpoint]
+})
+
 // 根据 API 地址获取默认模型
-const getDefaultModel = (endpoint: string) => {
-  switch (endpoint) {
-    case '/api/openai':
-      return 'gpt-3.5-turbo'
-    case '/api/deepseek':
-      return 'deepseek-chat'
-    case '/api/moonshot':
-      return 'moonshot-v1-auto'
-    default:
-      return settings.model
-  }
+const getDefaultModel = (endpoint: ApiEndpoint): string => {
+  const models = modelOptions[endpoint]
+  return models.length > 0 ? models[0].value : settings.model
 }
 
-// 监听 API 地址变化
-watch(() => settings.apiEndpoint, (newEndpoint) => {
+// 监听 API 地址变化，自动切换默认模型
+watch(() => settings.apiEndpoint, (newEndpoint: ApiEndpoint) => {
   if (newEndpoint !== 'custom') {
     settings.model = getDefaultModel(newEndpoint)
   }
 })
 
 const testConnection = async () => {
-  testing.value = true
-  testSuccess.value = false
-  testResponse.value = ''
-  testError.value = ''
+  isTestingConnection.value = true
+  testResult.value = null
 
   try {
     const response = await testLLMConnection({
@@ -162,24 +170,27 @@ const testConnection = async () => {
       systemPrompt: ''
     })
 
-    testSuccess.value = true
-    testResponse.value = response
-  } catch (error: any) {
-    testSuccess.value = false
-    testError.value = error.message
+    testResult.value = {
+      status: 'success',
+      message: response
+    }
+  } catch (error) {
+    testResult.value = {
+      status: 'error',
+      message: error instanceof Error ? error.message : '未知错误'
+    }
   } finally {
-    testing.value = false
-    showTestResult.value = true
+    isTestingConnection.value = false
   }
+}
+
+const close = () => {
+  emit('close')
 }
 
 const save = () => {
   settingsStore.updateSettings(settings)
   close()
-}
-
-const close = () => {
-  emit('close')
 }
 </script>
 

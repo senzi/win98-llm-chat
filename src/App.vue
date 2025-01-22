@@ -6,16 +6,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, provide } from 'vue'
 import ChatWindow from './components/ChatWindow.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
-import { useChatStore } from './stores/chat'
 
 const showSettings = ref(false)
 
 const openSettings = () => {
   showSettings.value = true
 }
+
+provide('openSettings', openSettings)
 
 defineExpose({
   openSettings

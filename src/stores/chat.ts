@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
-import OpenAI from 'openai'
 import { useSettingsStore } from './settings'
+import OpenAI from 'openai'
 
 interface Message {
   role: 'user' | 'assistant' | 'error'
@@ -10,113 +9,77 @@ interface Message {
   id?: string
 }
 
-export const useChatStore = defineStore('chat', () => {
-  const messages = ref<Message[]>([])
-  const settingsStore = useSettingsStore()
-
-  // 从localStorage加载消息
-  const loadMessages = () => {
+export const useChatStore = defineStore('chat', {
+  state: () => {
+    // 从localStorage加载初始消息
     const saved = localStorage.getItem('chat_messages')
-    if (saved) {
+    return {
+      messages: saved ? JSON.parse(saved) : [] as Message[]
+    }
+  },
+
+  actions: {
+    clearMessages() {
+      this.messages = []
+      localStorage.removeItem('chat_messages')
+    },
+
+    async sendMessage(content: string) {
+      const settingsStore = useSettingsStore()
+
+      // 添加用户消息
+      this.messages.push({
+        role: 'user',
+        content,
+        timestamp: Date.now()
+      })
+
+      // 保存消息到localStorage
+      localStorage.setItem('chat_messages', JSON.stringify(this.messages))
+
       try {
-        messages.value = JSON.parse(saved)
+        const openai = new OpenAI({
+          baseURL: settingsStore.effectiveApiEndpoint === '/api/openai'
+            ? 'https://api.openai.com'
+            : settingsStore.effectiveApiEndpoint === '/api/deepseek'
+            ? 'https://api.deepseek.com'
+            : 'https://api.moonshot.cn',
+          apiKey: settingsStore.apiKey,
+          dangerouslyAllowBrowser: true
+        })
+        
+        const completion = await openai.chat.completions.create({
+          model: settingsStore.model,
+          messages: [
+            { role: 'system', content: settingsStore.systemPrompt },
+            ...this.messages
+              .filter((msg: Message) => msg.role !== 'error')
+              .map((msg: Message) => ({
+                role: msg.role as 'user' | 'assistant',
+                content: msg.content
+              }))
+          ],
+          temperature: settingsStore.temperature,
+        })
+
+        // 添加 AI 响应
+        this.messages.push({
+          role: 'assistant',
+          content: completion.choices[0].message.content || '',
+          timestamp: Date.now()
+        })
+
+        // 保存消息到localStorage
+        localStorage.setItem('chat_messages', JSON.stringify(this.messages))
       } catch (error) {
-        console.error('Failed to load messages:', error)
+        this.messages.push({
+          role: 'error',
+          content: `错误: ${error instanceof Error ? error.message : '未知错误'}`,
+          timestamp: Date.now()
+        })
+        // 保存消息到localStorage
+        localStorage.setItem('chat_messages', JSON.stringify(this.messages))
       }
     }
-  }
-
-  // 保存消息到localStorage
-  const saveMessages = () => {
-    localStorage.setItem('chat_messages', JSON.stringify(messages.value))
-  }
-
-  // 监听消息变化，自动保存
-  watch(() => messages.value, () => {
-    saveMessages()
-  }, { deep: true })
-
-  const getOpenAIClient = () => {
-    const baseURL = settingsStore.effectiveApiEndpoint === '/api/openai' 
-      ? 'https://api.openai.com'
-      : settingsStore.effectiveApiEndpoint === '/api/deepseek'
-      ? 'https://api.deepseek.com'
-      : 'https://api.moonshot.cn'
-
-    return new OpenAI({
-      baseURL,
-      apiKey: settingsStore.apiKey,
-      dangerouslyAllowBrowser: true
-    })
-  }
-
-  const sendMessage = async (message: { role: string, content: string, timestamp: number }, options?: {
-    apiKey?: string,
-    apiEndpoint?: string,
-    model?: string,
-    temperature?: number,
-    systemPrompt?: string
-  }) => {
-    // 添加用户消息
-    messages.value.push({
-      role: message.role as 'user' | 'assistant' | 'error',
-      content: message.content,
-      timestamp: message.timestamp
-    })
-
-    try {
-      const openai = options ? new OpenAI({
-        baseURL: options.apiEndpoint === '/api/openai' 
-          ? 'https://api.openai.com'
-          : options.apiEndpoint === '/api/deepseek'
-          ? 'https://api.deepseek.com'
-          : 'https://api.moonshot.cn',
-        apiKey: options.apiKey,
-        dangerouslyAllowBrowser: true
-      }) : getOpenAIClient()
-      
-      const completion = await openai.chat.completions.create({
-        model: options?.model || settingsStore.model,
-        messages: [
-          { role: 'system', content: options?.systemPrompt || settingsStore.systemPrompt },
-          ...messages.value
-            .filter(msg => msg.role !== 'error')
-            .map(msg => ({
-              role: msg.role as 'user' | 'assistant',
-              content: msg.content
-            }))
-        ],
-        temperature: options?.temperature ?? settingsStore.temperature,
-      })
-
-      // 添加 AI 响应
-      messages.value.push({
-        role: 'assistant',
-        content: completion.choices[0].message.content || '',
-        timestamp: Date.now()
-      })
-    } catch (error) {
-      // 添加错误消息
-      messages.value.push({
-        role: 'error',
-        content: `错误: ${error.message}`,
-        timestamp: Date.now()
-      })
-    }
-  }
-
-  const clearMessages = () => {
-    messages.value = []
-    // 清空本地存储
-    localStorage.removeItem('chat_messages')
-  }
-
-  // 初始化时加载消息
-  loadMessages()
-
-  return {
-    messages,
-    sendMessage,
-    clearMessages
   }
 })
