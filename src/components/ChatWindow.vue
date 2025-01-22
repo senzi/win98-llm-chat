@@ -185,8 +185,8 @@ onMounted(() => {
   align-items: center;
 }
 
-
 .message-content {
+  position: relative;
   padding: 6px 8px;
   word-wrap: break-word;
   white-space: pre-wrap;
@@ -317,6 +317,58 @@ onMounted(() => {
 
 .bot-message .message-content {
   background: #FFFFCC;
+}
+
+/* 用户消息的小三角形 */
+.user-message .message-content:after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  right: 12px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #000000;
+}
+
+.user-message .message-content:before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  right: 13px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 7px solid #FFFFCC;
+  z-index: 1;
+}
+
+/* 机器人消息的小三角形 */
+.bot-message .message-content:after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 12px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #000000;
+}
+
+.bot-message .message-content:before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 13px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 7px solid #FFFFCC;
+  z-index: 1;
 }
 
 .message-meta {
