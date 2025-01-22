@@ -282,10 +282,22 @@ input[type="range"] {
 }
 
 .modal-content {
-  padding: 16px;
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+.modal-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 100%;
+}
+
+.modal-message {
+  flex: 1;
+  min-width: 0;
 }
 
 .warning-icon {
@@ -304,12 +316,6 @@ input[type="range"] {
 
 .warning-icon.success {
   background: #00ff00;
-}
-
-.modal-message {
-  flex: 1;
-  min-width: 0;
-  word-break: break-word;
 }
 
 .modal-buttons {
