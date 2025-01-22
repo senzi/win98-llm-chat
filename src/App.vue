@@ -1,30 +1,43 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+  <div class="app">
+    <ChatWindow />
+    <SettingsDialog :is-open="showSettings" @close="showSettings = false" />
   </div>
-  <HelloWorld msg="Vite + Vue" />
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+<script setup lang="ts">
+import { ref } from 'vue'
+import ChatWindow from './components/ChatWindow.vue'
+import SettingsDialog from './components/SettingsDialog.vue'
+import { useChatStore } from './stores/chat'
+
+const showSettings = ref(false)
+
+const openSettings = () => {
+  showSettings.value = true
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+
+defineExpose({
+  openSettings
+})
+</script>
+
+<style>
+@import '98.css';
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: "Microsoft Sans Serif", "Segoe UI", sans-serif;
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+
+.app {
+  min-height: 100vh;
+  background: #008080;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

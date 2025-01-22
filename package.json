@@ -9,7 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.13"
+    "@types/dompurify": "^3.0.5",
+    "98.css": "^0.1.20",
+    "dompurify": "^3.2.3",
+    "markdown-it": "^14.0.0",
+    "marked": "^15.0.6",
+    "openai": "^4.79.4",
+    "pinia": "^2.1.7",
+    "vue": "^3.5.13",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
