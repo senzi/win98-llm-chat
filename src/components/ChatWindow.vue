@@ -4,9 +4,8 @@
       <div class="title-bar-text">LLM 98</div>
       <div class="title-bar-controls">
         <button aria-label="Minimize"></button>
-        <button aria-label="Maximize"></button>
-        <button aria-label="Close"></button>
-        <button aria-label="Clear" @click="showClearConfirm = true"></button>
+        <button aria-label="Maximize" disabled></button>
+        <button aria-label="Close" @click="showClearConfirm = true"></button>
       </div>
     </div>
     <div class="window-body">
@@ -32,33 +31,35 @@
           ></textarea>
         </div>
         <div class="button-group">
-          <button @click="sendMessage" :disabled="isLoading">发送</button>
-          <button @click="$parent.openSettings">设置</button>
           <button @click="clearChat">清空对话</button>
+          <button @click="sendMessage" :disabled="isLoading">发送</button>
         </div>
       </div>
     </div>
 
-    <!-- 清空对话确认框 -->
+    <div class="status-bar">
+      <p class="status-bar-field button" @click="$parent.openSettings" style="cursor: pointer">
+        <u>S</u>ettings
+      </p>
+      <p class="status-bar-field status">API: {{ currentEndpoint }}</p>
+      <p class="status-bar-field status">Model: {{ settingsStore.model }}</p>
+      <p class="status-bar-field status">Temperature: {{ settingsStore.temperature }}</p>
+    </div>
+
+    <!-- 清空确认对话框 -->
     <div v-if="showClearConfirm" class="modal-overlay" @click.self="showClearConfirm = false">
       <div class="modal-window">
         <div class="title-bar">
-          <div class="title-bar-text">警告</div>
+          <div class="title-bar-text">确认清空</div>
           <div class="title-bar-controls">
             <button aria-label="Close" @click="showClearConfirm = false"></button>
           </div>
         </div>
         <div class="window-body">
-          <div class="modal-content">
-            <div class="warning-icon">!</div>
-            <div class="modal-message">
-              确定要清空所有对话记录吗？<br>
-              此操作无法撤销。
-            </div>
-          </div>
-          <div class="modal-buttons">
-            <button @click="confirmClear" @keyup.y="confirmClear">是(Y)</button>
-            <button @click="showClearConfirm = false" @keyup.n="showClearConfirm = false">否(N)</button>
+          <p>确定要清空所有对话记录吗？</p>
+          <div class="button-group">
+            <button @click="confirmClear">确定</button>
+            <button @click="showClearConfirm = false">取消</button>
           </div>
         </div>
       </div>
@@ -69,16 +70,26 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useChatStore } from '../stores/chat'
+import { useSettingsStore } from '../stores/settings'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 
 const chatStore = useChatStore()
+const settingsStore = useSettingsStore()
 const chatHistory = ref<HTMLElement | null>(null)
 const userInput = ref('')
 const isLoading = ref(false)
 const showClearConfirm = ref(false)
 
 const messages = computed(() => chatStore.messages)
+
+// 计算当前的API地址显示
+const currentEndpoint = computed(() => {
+  const endpoint = settingsStore.apiEndpoint
+  return endpoint === 'custom' ? settingsStore.customEndpoint : 
+    endpoint === '/api/openai' ? 'OpenAI' :
+    endpoint === '/api/deepseek' ? 'Deepseek' : 'Moonshot'
+})
 
 const formatTime = (timestamp: number) => {
   return new Date(timestamp).toLocaleTimeString('zh-CN', { 
@@ -105,13 +116,13 @@ const sendMessage = async () => {
   await chatStore.sendMessage(message)
 }
 
-const clearChat = () => {
-  showClearConfirm.value = true
-}
-
 const confirmClear = () => {
   chatStore.clearMessages()
   showClearConfirm.value = false
+}
+
+const clearChat = () => {
+  showClearConfirm.value = true
 }
 
 onMounted(() => {
@@ -123,111 +134,257 @@ onMounted(() => {
 
 <style scoped>
 .chat-window {
-  height: 100vh;
+  width: 800px;
+  height: 600px;
   display: flex;
   flex-direction: column;
 }
 
+.title-bar {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .window-body {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 8px;
-  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  padding: 6px;
+  gap: 6px;
 }
 
 .chat-container {
   flex: 1;
+  background: white;
+  border: inset 1px #969696;
   overflow-y: auto;
-  margin-bottom: 8px;
-  padding: 8px;
+  padding: 12px;
+  box-sizing: border-box;
 }
 
 .message {
+  display: flex;
+  flex-direction: column;
   margin-bottom: 16px;
+  width: 100%;
 }
 
 .message-wrapper {
-  display: inline-block;
-  max-width: 80%;
-  margin-bottom: 4px;
+  display: flex;
+  width: 100%;
+  min-height: 32px;
+  align-items: center;
 }
 
 .message-content {
-  padding: 8px;
-  border-radius: 4px;
+  padding: 6px 8px;
+  word-wrap: break-word;
   white-space: pre-wrap;
-  word-break: break-word;
+  border: 1px solid #969696;
+  box-shadow: inset 1px 1px #ffffff, inset -1px -1px #7f7f7f;
+  max-width: 80%;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
-.message-content :deep(p) {
-  margin: 8px 0;
-}
-
-.message-content :deep(pre) {
-  background: #f0f0f0;
-  padding: 8px;
-  border-radius: 4px;
+.message-content pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
   overflow-x: auto;
+  width: 100%;
+  box-sizing: border-box;
   margin: 8px 0;
+  padding: 8px;
+  background: #f0f0f0;
+  border-radius: 2px;
 }
 
-.message-content :deep(code) {
-  font-family: 'Courier New', Courier, monospace;
+.message-content code {
+  font-family: monospace;
+  background: #f0f0f0;
+  padding: 1px 4px;
+  border-radius: 2px;
+  word-wrap: break-word;
 }
 
-.message-content :deep(hr) {
-  margin: 16px 0;
-  border: none;
-  border-top: 1px solid #ccc;
+.message-content p {
+  margin: 0;
+  padding: 0;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
+.message-content > *:first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.message-content > *:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.message-content p,
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4,
+.message-content h5,
+.message-content h6,
+.message-content ul,
+.message-content ol {
+  margin: 0;
+  padding: 0;
+}
+
+.message-content ul,
+.message-content ol {
+  padding-left: 1.5em;
+}
+
+.message-content * + * {
+  margin-top: 8px;
+}
+
+.message-content p + p {
+  margin-top: 8px;
+}
+
+/* 用户消息样式 */
 .user-message .message-wrapper {
-  margin-left: auto;
+  justify-content: flex-end;
 }
 
 .user-message .message-content {
-  background: #e6f3ff;
+  background: #dcedff;  /* 浅蓝色背景 */
+}
+
+/* AI消息样式 */
+.bot-message .message-wrapper {
+  justify-content: flex-start;
 }
 
 .bot-message .message-content {
-  background: #f5f5f5;
-}
-
-.error-message .message-content {
-  background: #ffe6e6;
-  color: #ff0000;
+  background: #e6e6e6;  /* 经典Windows灰色 */
 }
 
 .message-meta {
-  font-size: 12px;
-  color: #666;
   display: flex;
+  align-items: center;
   gap: 8px;
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+  padding: 0 4px;
 }
 
 .user-message .message-meta {
   justify-content: flex-end;
 }
 
+.bot-message .message-meta {
+  justify-content: flex-start;
+}
+
+.chat-container::-webkit-scrollbar {
+  width: 16px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+  background: #dfdfdf;
+  border: solid 1px #969696;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border: solid 1px #969696;
+  box-shadow: inset 1px 1px #dfdfdf, inset -1px -1px gray;
+}
+
+.code-block {
+  background: #000;
+  color: #fff;
+  font-family: monospace;
+  padding: 8px;
+  margin: 4px 0;
+  white-space: pre;
+}
+
+.error-message .message-content {
+  background: #ffd6d6;
+  border-color: #c86464;
+}
+
 .input-container {
-  border-top: 1px solid #ccc;
-  padding-top: 8px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .input-area {
-  display: flex;
-  gap: 8px;
+  width: 100%;
 }
 
 textarea {
-  flex: 1;
-  min-height: 60px;
-  resize: vertical;
+  width: 100%;
+  height: 60px;
+  resize: none;
+  font-family: inherit;
+  padding: 4px;
+  box-sizing: border-box;
 }
 
-.multiline {
-  white-space: pre-wrap;
+.button-group {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.button-group button {
+  min-width: 80px;
+  height: 24px;
+  padding: 0 6px;
+}
+
+.status-bar {
+  display: flex;
+  gap: 1px;
+  padding: 2px;
+  background: var(--surface);
+  border-top: 1px solid var(--button-face);
+  margin: 0;
+}
+
+.status-bar-field {
+  margin: 0;
+  padding: 2px 3px;
+  gap: 1px;
+  flex: 1;
+  min-height: 21px;
+  line-height: 16px;
+  font-size: 11px;
+}
+
+.status-bar-field.button {
+  background: var(--button-face);
+  border: 1px solid;
+  border-color: var(--button-face);
+  box-shadow: inset -1px -1px #0a0a0a,inset 1px 1px #fff,inset -2px -2px grey,inset 2px 2px #dfdfdf;
+}
+
+.status-bar-field.status {
+  background: var(--button-face);
+  border: 1px solid;
+  border-color: #888 #dadada #dadada #888;
+}
+
+.status-bar-field u {
+  text-decoration: none;
+  border-bottom: 1px solid #000;
 }
 
 .modal-overlay {
