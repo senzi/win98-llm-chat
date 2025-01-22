@@ -372,13 +372,12 @@ onMounted(() => {
 }
 
 .message-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 11px;
   color: #666;
-  margin-top: 4px;
-  padding: 0 4px;
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 4px;
+  margin-top: 12px;
 }
 
 .user-message .message-meta {
