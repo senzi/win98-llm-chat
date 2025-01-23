@@ -22,5 +22,20 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/moonshot\//, '')
       }
     }
-  }
+  },
+  build: {
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo: { name?: string }) => {
+          const name = assetInfo.name || ''
+          if (name.endsWith('.js')) {
+            return 'assets/[name][extname]'
+          }
+          return 'assets/[name]-[hash][extname]'
+        }
+      }
+    }
+  },
+  publicDir: 'public'
 })

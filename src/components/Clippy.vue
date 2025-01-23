@@ -23,6 +23,8 @@ const handleMouseUp = () => {
 }
 
 onMounted(() => {
+  // @ts-ignore
+  window.CLIPPY_CDN = '/assets'
   clippy.load({
     name: 'Clippy',
     selector: 'my-clippy',

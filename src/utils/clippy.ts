@@ -2,7 +2,7 @@ import OpenAI from 'openai'
 import { useChatStore } from '../stores/chat'
 import { useSettingsStore } from '../stores/settings'
 
-const DEFAULT_SYSTEM_PROMPT = '你是Clippy,只能用一句话回应用户。总是以"看起来..."或"我注意到..."开头，保持活泼但略显烦人的语气。'
+const DEFAULT_SYSTEM_PROMPT = '你是Clippy,只能用一句话回应用户。不要用Markdown和提供任何代码。总是以"看起来..."或"我注意到..."开头，保持活泼但略显烦人的语气。'
 
 interface ClippyState {
   lastUserMessage: string
@@ -68,7 +68,8 @@ class ClippyManager {
         dangerouslyAllowBrowser: true
       })
 
-      const completion = await openai.chat.completions.create({
+      // 并行执行API调用
+      openai.chat.completions.create({
         model: settingsStore.model,
         messages: [
           { role: 'system', content: DEFAULT_SYSTEM_PROMPT },
@@ -76,40 +77,43 @@ class ClippyManager {
         ],
         temperature: 0.7,
         max_tokens: 50
-      })
-
-      const response = completion.choices[0].message.content || ''
+      }).then(completion => {
+        const response = completion.choices[0].message.content || ''
       
-      // 更新状态
-      this.state.lastUserMessage = lastUserMessage
-      this.state.lastResponse = response
+        // 更新状态
+        this.state.lastUserMessage = lastUserMessage
+        this.state.lastResponse = response
 
-      // 显示回复前停止搜索动画
-      this.agent.stop()
-      // 显示回复
-      this.agent.speak(response)
-      this.agent.animate()
-
-    } catch (error) {
-      console.error('Clippy API error:', error)
-      this.agent.stop() // 错误时也要停止搜索动画
-      
-      // 根据错误类型给出不同提示
-      if (error instanceof Error) {
-        if (error.message.includes('key')) {
-          this.agent.speak('看起来API密钥有问题...要不要检查一下设置？')
-        } else if (error.message.includes('network') || error.message.includes('connect')) {
-          this.agent.speak('看起来网络连接有问题...要不要检查一下API地址？')
+        // 显示回复前停止搜索动画
+        this.agent.stop()
+        // 显示回复
+        this.agent.speak(response)
+        this.agent.animate()
+      }).catch(error => {
+        console.error('Clippy API error:', error)
+        this.agent.stop() // 错误时也要停止搜索动画
+        
+        // 根据错误类型给出不同提示
+        if (error instanceof Error) {
+          if (error.message.includes('key')) {
+            this.agent.speak('看起来API密钥有问题...要不要检查一下设置？')
+          } else if (error.message.includes('network') || error.message.includes('connect')) {
+            this.agent.speak('看起来网络连接有问题...要不要检查一下API地址？')
+          } else {
+            this.agent.speak('我遇到了一些问题...要不要检查一下API设置？')
+          }
         } else {
           this.agent.speak('我遇到了一些问题...要不要检查一下API设置？')
         }
-      } else {
-        this.agent.speak('我遇到了一些问题...要不要检查一下API设置？')
-      }
-      
+        
+        this.agent.animate()
+      })
+
+    } catch (error) {
+      this.agent.stop()
+      console.error('Failed to initialize OpenAI:', error)
+      this.agent.speak('看起来API设置有问题...')
       this.agent.animate()
-      // 点击Clippy打开设置
-      this.agent.gestureAt(window.innerWidth - 100, window.innerHeight - 100)
     }
   }
 }
