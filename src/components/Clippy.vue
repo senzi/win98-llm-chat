@@ -5,10 +5,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, inject, ref } from 'vue'
 import clippy from 'clippyts'
 import { clippyManager } from '../utils/clippy'
+import type { Emitter } from 'mitt'
 
+const STORAGE_KEY = 'v110_info_read'
+const emitter = inject('emitter') as Emitter<any>
 const mouseDownTime = ref(0)
 
 const handleMouseDown = () => {
@@ -16,10 +19,21 @@ const handleMouseDown = () => {
 }
 
 const handleMouseUp = () => {
-  const duration = Date.now() - mouseDownTime.value
-  // 如果按下时间小于200ms，认为是点击而不是拖动
-  const isClick = duration < 200
+  const isClick = Date.now() - mouseDownTime.value < 200
   clippyManager.handleInteraction(isClick)
+}
+
+const performGreeting = (agent: any) => {
+  agent.speak("我是Clippy，你好！", false)
+  agent.play('Greeting')
+  setTimeout(() => {
+    agent.speak("等下！", false)
+    agent.play('GetAttention')
+    setTimeout(() => {
+      agent.speak("这是给我干到哪年来了？", false)
+      agent.play('GetWizardy')
+    }, 1000)
+  }, 1000)
 }
 
 onMounted(() => {
@@ -30,21 +44,19 @@ onMounted(() => {
     selector: 'my-clippy',
     successCb: (agent) => {
       console.log("Clippy loaded!")
-      //console.log("Available animations:", agent.animations())
       clippyManager.setAgent(agent)
       agent.show(false)
-      setTimeout(() => {
-        agent.speak("我是Clippy，你好！", false)
-        agent.play('Greeting')
-        setTimeout(() => {
-          agent.speak("等下！", false)
-          agent.play('GetAttention')
-          setTimeout(() => {
-            agent.speak("这是给我干到哪年来了？", false)
-            agent.play('GetWizardy')
-          }, 1000)
-        }, 1000)
-      }, 1000)
+
+      const hasRead = localStorage.getItem(STORAGE_KEY)
+      if (hasRead) {
+        // 老用户直接开始表演
+        setTimeout(() => performGreeting(agent), 1000)
+      } else {
+        // 新用户等待关闭模态框后再表演
+        emitter.on('versionInfoClosed', () => {
+          setTimeout(() => performGreeting(agent), 500)
+        })
+      }
     },
     failCb: (e) => {
       console.error('Failed to load Clippy:', e)

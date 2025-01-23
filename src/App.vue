@@ -51,10 +51,14 @@ import { ref, provide, onMounted } from 'vue'
 import ChatWindow from './components/ChatWindow.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import Clippy from './components/Clippy.vue'
+import mitt from 'mitt'
 
 const STORAGE_KEY = 'v110_info_read'
 const showSettings = ref(false)
 const showVersionInfo = ref(false)
+const emitter = mitt()
+
+provide('emitter', emitter)
 
 const openSettings = () => {
   showSettings.value = true
@@ -63,6 +67,7 @@ const openSettings = () => {
 const closeVersionInfo = () => {
   showVersionInfo.value = false
   localStorage.setItem(STORAGE_KEY, 'true')
+  emitter.emit('versionInfoClosed')
 }
 
 onMounted(() => {
