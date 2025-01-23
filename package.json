@@ -1,7 +1,7 @@
 {
   "name": "win98-llm-chat",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
   "dependencies": {
     "@types/dompurify": "^3.0.5",
     "98.css": "^0.1.20",
+    "clippyts": "^1.0.4",
     "dompurify": "^3.2.3",
     "markdown-it": "^14.0.0",
     "marked": "^15.0.6",
